@@ -1,6 +1,7 @@
 package org.acme;
 
 import models.Payment;
+import models.ResponseMessage;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -13,14 +14,26 @@ public class PaymentService {
     Set<String> merchants = new HashSet<>();
 
     public PaymentService() {
-
+        customers.add("cid1");
+        merchants.add("mid1");
     }
 
     // Payment method checks for known customers and merchants
     // Adds payment if successful
-    public boolean pay(int amount, String cid, String mid) {
-        Payment payment = new Payment(amount, cid, mid);
-        payments.add(payment);
-        return true;
+    public ResponseMessage pay(Payment payment) {
+        if (!customers.contains(payment.getCid()) && !merchants.contains(payment.getMid())) {
+            return new ResponseMessage(false, "customer with id " + payment.getCid() + " and merchant with id " + payment.getMid() + " are unknown");
+        } else if (!customers.contains(payment.getCid())) {
+            return new ResponseMessage(false, "customer with id " + payment.getCid() + " is unknown");
+        } else if (!merchants.contains(payment.getMid())) {
+            return new ResponseMessage(false, "merchant with id " + payment.getMid() + " is unknown");
+        } else {
+            payments.add(payment);
+            return new ResponseMessage(true, "");
+        }
+    }
+
+    public ArrayList<Payment> getAll() {
+        return payments;
     }
 }
