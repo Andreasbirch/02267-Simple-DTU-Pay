@@ -1,13 +1,19 @@
 package dtu.example;
 
+import dtu.ws.fastmoney.*;
+import io.cucumber.java.After;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import models.BankCustomer;
 import models.Payment;
 import models.ResponseMessage;
+import org.junit.Before;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -15,8 +21,13 @@ public class PaymentSteps {
     String cid, mid;
     SimpleDTUPay dtuPay = new SimpleDTUPay();
     Payment payment = new Payment();
-    ArrayList<Payment> payments = new ArrayList<>();
+    List<Transaction> payments = new ArrayList<>();
     ResponseMessage responseMessage = new ResponseMessage();
+    BankService bank = new BankServiceService().getBankServicePort();
+    String accountNumCustomer, accountNumMerchant;
+    boolean successful;
+
+    //TODO We're fairly certain most of the original tests needs to be rewritten to support the bank extension.
     @Given("a customer with id {string}")
     public void aCustomerWithId(String cid) {
         this.cid = cid;
@@ -39,7 +50,7 @@ public class PaymentSteps {
     }
     @When("the manager asks for a list of payments")
     public void theManagerAsksForAListOfPayments() {
-        payments = dtuPay.getPayments();
+        payments = dtuPay.getPayments(accountNumCustomer);
     }
 
     @Then("the payment is successful")
@@ -50,8 +61,8 @@ public class PaymentSteps {
     @Then("the list contains a payments where customer {string} paid {int} kr to merchant {string}")
     public void theListContainsAPaymentsWhereCustomerPaidKrToMerchant(String cid, int amount, String mid) {
         boolean elementFound = false;
-        for (Payment p : payments) {
-            if (p.getAmount() == amount && p.getCid().equals(cid) && p.getMid().equals(mid)) {
+        for (Transaction p : payments) {
+            if (p.getAmount().equals(BigDecimal.valueOf(amount)) && p.getDebtor().equals(cid) && p.getCreditor().equals(mid)) {
                 elementFound = true;
                 break;
             }
@@ -68,5 +79,59 @@ public class PaymentSteps {
     @And("an error message is returned saying {string}")
     public void anErrorMessageIsReturnedSaying(String error) {
         assertEquals(error, responseMessage.getMessage());
+    }
+
+    @Given("a customer with a bank account with balance {int}")
+    public void aCustomerWithABankAccountWithBalance(int balance) throws BankServiceException_Exception {
+        User user = new User();
+        user.setCprNumber("1234567890");
+        user.setFirstName("Alice");
+        user.setLastName("Aname");
+        accountNumCustomer = bank.createAccountWithBalance(user, BigDecimal.valueOf(balance));
+    }
+
+    @And("that the customer is registered with DTU Pay")
+    public void thatTheCustomerIsRegisteredWithDTUPay() {
+        successful = dtuPay.registerCustomer(new BankCustomer("cid1", accountNumCustomer));
+        responseMessage.setSuccessful(successful);
+    }
+
+    @Given("a merchant with a bank account with balance {int}")
+    public void aMerchantWithABankAccountWithBalance(int balance) throws BankServiceException_Exception {
+        User user = new User();
+        user.setCprNumber("0123456789");
+        user.setFirstName("Bob");
+        user.setLastName("Bname");
+        accountNumMerchant = bank.createAccountWithBalance(user, BigDecimal.valueOf(balance));
+    }
+
+    @And("that the merchant is registered with DTU Pay")
+    public void thatTheMerchantIsRegisteredWithDTUPay() {
+        successful = dtuPay.registerCustomer(new BankCustomer("mid1", accountNumMerchant));
+        responseMessage.setSuccessful(successful);
+    }
+
+    @And("the balance of the customer at the bank is {int} kr")
+    public void theBalanceOfTheCustomerAtTheBankIsKr(int newBalance) {
+        assertEquals(BigDecimal.valueOf(newBalance), dtuPay.getAccountBalance(accountNumCustomer));
+    }
+
+    @And("the balance of the merchant at the bank is {int} kr")
+    public void theBalanceOfTheMerchantAtTheBankIsKr(int newBalance) {
+        assertEquals(BigDecimal.valueOf(newBalance), dtuPay.getAccountBalance(accountNumMerchant));
+    }
+
+    @Before
+    @After
+    public void after() {
+        try {
+            if(bank.getAccount(accountNumCustomer) != null) {
+                bank.retireAccount(accountNumCustomer);
+            }
+            if(bank.getAccount(accountNumMerchant) != null) {
+                bank.retireAccount(accountNumMerchant);
+            }
+        } catch (BankServiceException_Exception e) {
+        }
     }
 }
