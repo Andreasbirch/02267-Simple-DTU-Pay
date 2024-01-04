@@ -3,6 +3,7 @@ package org.acme;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import models.Payment;
+import models.ResponseMessage;
 
 import java.util.ArrayList;
 
@@ -13,7 +14,7 @@ public class PaymentResource {
 
     @POST
     //@Consumes(MediaType.APPLICATION_JSON)
-    public boolean pay(Payment payment) {
+    public ResponseMessage pay(Payment payment) {
         return service.pay(payment);
     }
 
