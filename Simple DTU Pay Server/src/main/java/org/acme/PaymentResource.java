@@ -1,9 +1,10 @@
 package org.acme;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import models.Payment;
+
+import java.util.ArrayList;
 
 @Path("/payment")
 public class PaymentResource {
@@ -11,8 +12,14 @@ public class PaymentResource {
     PaymentService service = new PaymentService();
 
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    public boolean pay(int amount, String cid, String mid) {
-        return service.pay(amount, cid, mid);
+    //@Consumes(MediaType.APPLICATION_JSON)
+    public boolean pay(Payment payment) {
+        return service.pay(payment);
+    }
+
+    @GET
+    //@Produces(MediaType.APPLICATION_JSON)
+    public ArrayList<Payment> getAll() {
+        return service.getAll();
     }
 }

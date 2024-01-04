@@ -18,9 +18,12 @@ public class PaymentService {
 
     // Payment method checks for known customers and merchants
     // Adds payment if successful
-    public boolean pay(int amount, String cid, String mid) {
-        Payment payment = new Payment(amount, cid, mid);
+    public boolean pay(Payment payment) {
         payments.add(payment);
         return true;
+    }
+
+    public ArrayList<Payment> getAll() {
+        return payments;
     }
 }

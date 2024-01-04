@@ -4,8 +4,11 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.MediaType;
 import models.Payment;
+
+import java.util.ArrayList;
 
 public class SimpleDTUPay {
 
@@ -23,5 +26,12 @@ public class SimpleDTUPay {
                 .request()
                 .post(Entity.entity(payment, MediaType.APPLICATION_JSON));
         return true;
+    }
+
+    public ArrayList<Payment> getPayments() {
+        return baseUrl.path("payment")
+                .request()
+                .accept(MediaType.APPLICATION_JSON)
+                .get(new GenericType<ArrayList<Payment>>(){});
     }
 }
