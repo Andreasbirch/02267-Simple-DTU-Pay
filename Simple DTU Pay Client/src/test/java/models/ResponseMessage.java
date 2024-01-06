@@ -9,6 +9,11 @@ public class ResponseMessage {
 
     }
 
+    public ResponseMessage(boolean successful, String message) {
+        this.successful = successful;
+        this.message = message;
+    }
+
     public String getMessage() {
         return message;
     }

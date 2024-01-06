@@ -1,14 +1,17 @@
 package dtu.example;
 
 import dtu.ws.fastmoney.*;
-import io.cucumber.java.After;
+import io.cucumber.java.AfterAll;
+import io.cucumber.java.BeforeAll;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import models.BankCustomer;
 import models.Payment;
+import models.RequestMessage;
 import models.ResponseMessage;
+import org.junit.After;
 import org.junit.Before;
 
 import java.math.BigDecimal;
@@ -26,6 +29,30 @@ public class PaymentSteps {
     BankService bank = new BankServiceService().getBankServicePort();
     String accountNumCustomer, accountNumMerchant;
     boolean successful;
+
+    User customer = new User();
+    User merchant = new User();
+
+    @BeforeAll
+    public void before() throws BankServiceException_Exception {
+        ArrayList<Integer> indices = new ArrayList<>();
+        int idx = 0;
+
+        //Retire accounts
+        for (AccountInfo info: bank.getAccounts()) {
+            String accountId = info.getAccountId();
+            if (bank.getAccount(accountId) != null) {
+                bank.retireAccount(accountId);
+                indices.add(idx);
+                idx++;
+            }
+        }
+
+        //Remove all retired accounts from list of accounts
+        for (Integer i: indices) {
+            bank.getAccounts().remove(i);
+        }
+    }
 
     //TODO We're fairly certain most of the original tests needs to be rewritten to support the bank extension.
     @Given("a customer with id {string}")
@@ -83,55 +110,68 @@ public class PaymentSteps {
 
     @Given("a customer with a bank account with balance {int}")
     public void aCustomerWithABankAccountWithBalance(int balance) throws BankServiceException_Exception {
-        User user = new User();
-        user.setCprNumber("1234567890");
-        user.setFirstName("Alice");
-        user.setLastName("Aname");
-        accountNumCustomer = bank.createAccountWithBalance(user, BigDecimal.valueOf(balance));
+        customer = new User();
+        customer.setCprNumber("1234567890");
+        customer.setFirstName("Alice");
+        customer.setLastName("Aname");
+        accountNumCustomer = bank.createAccountWithBalance(customer, BigDecimal.valueOf(balance));
     }
 
     @And("that the customer is registered with DTU Pay")
     public void thatTheCustomerIsRegisteredWithDTUPay() {
-        successful = dtuPay.registerCustomer(new BankCustomer("cid1", accountNumCustomer));
+        successful = dtuPay.registerCustomer(new RequestMessage(customer.getFirstName(), customer.getLastName(), customer.getCprNumber(), accountNumCustomer)).isSuccessful();
         responseMessage.setSuccessful(successful);
     }
 
     @Given("a merchant with a bank account with balance {int}")
     public void aMerchantWithABankAccountWithBalance(int balance) throws BankServiceException_Exception {
-        User user = new User();
-        user.setCprNumber("0123456789");
-        user.setFirstName("Bob");
-        user.setLastName("Bname");
-        accountNumMerchant = bank.createAccountWithBalance(user, BigDecimal.valueOf(balance));
+        merchant = new User();
+        merchant.setCprNumber("9876543210");
+        merchant.setFirstName("Bob");
+        merchant.setLastName("Bname");
+        accountNumMerchant = bank.createAccountWithBalance(merchant, BigDecimal.valueOf(balance));
     }
 
     @And("that the merchant is registered with DTU Pay")
     public void thatTheMerchantIsRegisteredWithDTUPay() {
-        successful = dtuPay.registerCustomer(new BankCustomer("mid1", accountNumMerchant));
+        successful = dtuPay.registerCustomer(new RequestMessage(merchant.getFirstName(), merchant.getLastName(), merchant.getCprNumber(), accountNumMerchant)).isSuccessful();
         responseMessage.setSuccessful(successful);
     }
 
     @And("the balance of the customer at the bank is {int} kr")
     public void theBalanceOfTheCustomerAtTheBankIsKr(int newBalance) {
-        assertEquals(BigDecimal.valueOf(newBalance), dtuPay.getAccountBalance(accountNumCustomer));
+        try {
+            assertEquals(BigDecimal.valueOf(newBalance), bank.getAccount(accountNumCustomer).getBalance());
+        } catch (BankServiceException_Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @And("the balance of the merchant at the bank is {int} kr")
     public void theBalanceOfTheMerchantAtTheBankIsKr(int newBalance) {
-        assertEquals(BigDecimal.valueOf(newBalance), dtuPay.getAccountBalance(accountNumMerchant));
+        try {
+            assertEquals(BigDecimal.valueOf(newBalance), bank.getAccount(accountNumMerchant).getBalance());
+        } catch (BankServiceException_Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    @Before
+    @AfterAll
     @After
-    public void after() {
-        try {
-            if(bank.getAccount(accountNumCustomer) != null) {
-                bank.retireAccount(accountNumCustomer);
+    public void after() throws BankServiceException_Exception {
+        ArrayList<Integer> indices = new ArrayList<Integer>();
+        int idx = 0;
+        for (AccountInfo info: bank.getAccounts()) {
+            String accountId = info.getAccountId();
+            if (bank.getAccount(accountId) != null) {
+                bank.retireAccount(accountId);
+                indices.add(idx);
+                idx++;
             }
-            if(bank.getAccount(accountNumMerchant) != null) {
-                bank.retireAccount(accountNumMerchant);
-            }
-        } catch (BankServiceException_Exception e) {
+        }
+
+        for (Integer i: indices) {
+            bank.getAccounts().remove(i);
         }
     }
 }
