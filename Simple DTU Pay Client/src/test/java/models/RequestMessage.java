@@ -40,7 +40,7 @@ public class RequestMessage {
         return accNumber;
     }
 
-    public void accNumber(String accNumber) {
+    public void setAccNumber(String accNumber) {
         this.accNumber = accNumber;
     }
 }

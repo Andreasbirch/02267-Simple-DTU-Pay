@@ -20,11 +20,7 @@ public class PaymentResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public ResponseMessage pay(Payment payment) {
-        try {
-            return service.pay(payment);
-        } catch (BankServiceException_Exception e) {
-            return new ResponseMessage(false, e.getMessage());
-        }
+        return service.pay(payment);
     }
 
     @GET

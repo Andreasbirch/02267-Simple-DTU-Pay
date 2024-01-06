@@ -1,18 +1,14 @@
 package dtu.example;
 
 import dtu.ws.fastmoney.*;
-import io.cucumber.java.AfterAll;
-import io.cucumber.java.BeforeAll;
+import io.cucumber.java.After;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import models.BankCustomer;
 import models.Payment;
 import models.RequestMessage;
 import models.ResponseMessage;
-import org.junit.After;
-import org.junit.Before;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -33,28 +29,8 @@ public class PaymentSteps {
     User customer = new User();
     User merchant = new User();
 
-    @BeforeAll
-    public void before() throws BankServiceException_Exception {
-        ArrayList<Integer> indices = new ArrayList<>();
-        int idx = 0;
+    ArrayList<String> usedAccounts = new ArrayList<>();
 
-        //Retire accounts
-        for (AccountInfo info: bank.getAccounts()) {
-            String accountId = info.getAccountId();
-            if (bank.getAccount(accountId) != null) {
-                bank.retireAccount(accountId);
-                indices.add(idx);
-                idx++;
-            }
-        }
-
-        //Remove all retired accounts from list of accounts
-        for (Integer i: indices) {
-            bank.getAccounts().remove(i);
-        }
-    }
-
-    //TODO We're fairly certain most of the original tests needs to be rewritten to support the bank extension.
     @Given("a customer with id {string}")
     public void aCustomerWithId(String cid) {
         this.cid = cid;
@@ -82,6 +58,7 @@ public class PaymentSteps {
 
     @Then("the payment is successful")
     public void thePaymentIsSuccessful() {
+
         assertTrue(responseMessage.isSuccessful());
     }
 
@@ -112,14 +89,20 @@ public class PaymentSteps {
     public void aCustomerWithABankAccountWithBalance(int balance) throws BankServiceException_Exception {
         customer = new User();
         customer.setCprNumber("1234567890");
+        cid = customer.getCprNumber();
         customer.setFirstName("Alice");
         customer.setLastName("Aname");
         accountNumCustomer = bank.createAccountWithBalance(customer, BigDecimal.valueOf(balance));
+
+        usedAccounts.add(accountNumCustomer);
     }
 
     @And("that the customer is registered with DTU Pay")
     public void thatTheCustomerIsRegisteredWithDTUPay() {
-        successful = dtuPay.registerCustomer(new RequestMessage(customer.getFirstName(), customer.getLastName(), customer.getCprNumber(), accountNumCustomer)).isSuccessful();
+        RequestMessage rm = new RequestMessage(customer.getFirstName(), customer.getLastName(), customer.getCprNumber(), accountNumCustomer);
+        ResponseMessage response = dtuPay.registerCustomer(rm);
+        successful = response.isSuccessful();
+
         responseMessage.setSuccessful(successful);
     }
 
@@ -127,9 +110,11 @@ public class PaymentSteps {
     public void aMerchantWithABankAccountWithBalance(int balance) throws BankServiceException_Exception {
         merchant = new User();
         merchant.setCprNumber("9876543210");
+        mid = merchant.getCprNumber();
         merchant.setFirstName("Bob");
         merchant.setLastName("Bname");
         accountNumMerchant = bank.createAccountWithBalance(merchant, BigDecimal.valueOf(balance));
+        usedAccounts.add(accountNumMerchant);
     }
 
     @And("that the merchant is registered with DTU Pay")
@@ -156,22 +141,11 @@ public class PaymentSteps {
         }
     }
 
-    @AfterAll
     @After
     public void after() throws BankServiceException_Exception {
-        ArrayList<Integer> indices = new ArrayList<Integer>();
-        int idx = 0;
-        for (AccountInfo info: bank.getAccounts()) {
-            String accountId = info.getAccountId();
-            if (bank.getAccount(accountId) != null) {
-                bank.retireAccount(accountId);
-                indices.add(idx);
-                idx++;
-            }
-        }
-
-        for (Integer i: indices) {
-            bank.getAccounts().remove(i);
+        for (String account: usedAccounts) {
+            System.out.println(account);
+            bank.retireAccount(account);
         }
     }
 }

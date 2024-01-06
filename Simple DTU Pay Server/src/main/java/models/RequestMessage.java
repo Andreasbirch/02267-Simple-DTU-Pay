@@ -5,6 +5,13 @@ public class RequestMessage {
 
     public RequestMessage() {}
 
+    public RequestMessage(String firstName, String lastName, String cpr, String accNumber) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.cpr = cpr;
+        this.accNumber = accNumber;
+    }
+
     public String getFirstName() {
         return firstName;
     }

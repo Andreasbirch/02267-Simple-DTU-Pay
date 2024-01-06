@@ -24,17 +24,33 @@ public class PaymentService {
 
     // Payment method checks for known customers and merchants
     // Adds payment if successful
-    public ResponseMessage pay(Payment payment) throws BankServiceException_Exception {
-        if (!customers.contains(payment.getCid()) && !merchants.contains(payment.getMid())) {
-            return new ResponseMessage(false, "customer with id " + payment.getCid() + " and merchant with id " + payment.getMid() + " are unknown");
-        } else if (!customers.contains(payment.getCid())) {
-            return new ResponseMessage(false, "customer with id " + payment.getCid() + " is unknown");
-        } else if (!merchants.contains(payment.getMid())) {
-            return new ResponseMessage(false, "merchant with id " + payment.getMid() + " is unknown");
-        } else {
-            bankService.transferMoneyFromTo(payment.getCid(), payment.getMid(), BigDecimal.valueOf(payment.getAmount()), "");
+    public ResponseMessage pay(Payment payment){
+        String customerAccNumber = getAccNumberFromCpr(payment.getCid());
+        String merchantAccNumber = getAccNumberFromCpr(payment.getMid());
+        try {
+            bankService.transferMoneyFromTo(customerAccNumber, merchantAccNumber, BigDecimal.valueOf(payment.getAmount()), "Payment from " + payment.getCid() + " to " + payment.getMid());
             return new ResponseMessage(true, "");
+        } catch (BankServiceException_Exception e) {
+            return new ResponseMessage(false, e.getMessage());
         }
+//        if (!customers.contains(payment.getCid()) && !merchants.contains(payment.getMid())) {
+//            return new ResponseMessage(false, "customer with id " + payment.getCid() + " and merchant with id " + payment.getMid() + " are unknown");
+//        } else if (!customers.contains(payment.getCid())) {
+//            return new ResponseMessage(false, "customer with id " + payment.getCid() + " is unknown");
+//        } else if (!merchants.contains(payment.getMid())) {
+//            return new ResponseMessage(false, "merchant with id " + payment.getMid() + " is unknown");
+//        } else {
+//        }
+    }
+
+    private String getAccNumberFromCpr(String cpr) {
+        for (AccountInfo info: bankService.getAccounts()) {
+            User user = info.getUser();
+            if (user.getCprNumber().equals(cpr)) {
+                return info.getAccountId();
+            }
+        }
+        return "";
     }
 
     public List<Transaction> getAll(String accNum) throws BankServiceException_Exception {
