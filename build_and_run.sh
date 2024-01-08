@@ -1,2 +1,2 @@
 cd Simple\ DTU\ Pay\ Server/
-mvn package
+./mvnw test
