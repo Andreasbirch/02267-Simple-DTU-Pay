@@ -5,9 +5,7 @@ public class Payment {
     // CustomerId and MerchantId
     String cid, mid;
 
-    public Payment() {
-
-    }
+    public Payment() {}
 
     // Construct single payment
     public Payment(int amount, String cid, String mid) {
