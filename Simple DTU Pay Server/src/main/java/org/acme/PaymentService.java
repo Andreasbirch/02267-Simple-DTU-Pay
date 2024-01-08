@@ -16,7 +16,6 @@ public class PaymentService {
     public PaymentService() {}
 
     // Payment method checks for known customers and merchants
-    // Adds payment if successful
     public ResponseMessage pay(Payment payment){
         Db db = Db.Db();
         //Customer and merchant not found
@@ -39,6 +38,7 @@ public class PaymentService {
         try {
             bankService.transferMoneyFromTo(customerAccNumber, merchantAccNumber, BigDecimal.valueOf(payment.getAmount()), "Payment from " + payment.getCid() + " to " + payment.getMid());
             payments.add(payment);
+            //Add payment if transaction is successful
             return new ResponseMessage(true, "");
         } catch (BankServiceException_Exception e) {
             return new ResponseMessage(false, e.getMessage());
