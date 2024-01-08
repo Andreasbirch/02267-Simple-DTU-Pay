@@ -20,7 +20,7 @@ public class PaymentSteps {
     String cid, mid;
     SimpleDTUPay dtuPay = new SimpleDTUPay();
     Payment payment = new Payment();
-    List<Transaction> payments = new ArrayList<>();
+    List<Payment> payments = new ArrayList<>();
     ResponseMessage responseMessage = new ResponseMessage();
     BankService bank = new BankServiceService().getBankServicePort();
     String accountNumCustomer, accountNumMerchant;
@@ -31,21 +31,10 @@ public class PaymentSteps {
 
     ArrayList<String> usedAccounts = new ArrayList<>();
 
-    @Given("a customer with id {string}")
-    public void aCustomerWithId(String cid) {
-        this.cid = cid;
-    }
-    @Given("a successful payment of {int} kr from customer {string} to merchant {string}")
-    public void aSuccessfulPaymentFromCustomerToMerchant(int amount, String cid, String mid) {
-        if (dtuPay.pay(amount, cid, mid).isSuccessful()) {
-            payment.setAmount(amount);
-            payment.setCid(cid);
-            payment.setMid(mid);
-        }
-    }
-    @Given("a merchant with id {string}")
-    public void aMerchantWithId(String mid) {
-        this.mid = mid;
+    @Given("a successful payment of {int} kr from customer to merchant")
+    public void aSuccessfulPaymentFromCustomerToMerchant(int amount){
+        responseMessage = dtuPay.pay(amount, cid, mid);
+        assertTrue(responseMessage.isSuccessful());
     }
     @When("the merchant initiates a payment for {int} kr by the customer")
     public void theMerchantInitiatesAPaymentForKrByTheCustomer(int amount) {
@@ -53,25 +42,23 @@ public class PaymentSteps {
     }
     @When("the manager asks for a list of payments")
     public void theManagerAsksForAListOfPayments() {
-        payments = dtuPay.getPayments(accountNumCustomer);
+        payments = dtuPay.getPayments();
     }
 
     @Then("the payment is successful")
     public void thePaymentIsSuccessful() {
-
         assertTrue(responseMessage.isSuccessful());
     }
 
-    @Then("the list contains a payments where customer {string} paid {int} kr to merchant {string}")
-    public void theListContainsAPaymentsWhereCustomerPaidKrToMerchant(String cid, int amount, String mid) {
+    @Then("the list contains a payments where customer paid {int} kr to merchant")
+    public void theListContainsAPaymentsWhereCustomerPaidKrToMerchant(int amount) {
         boolean elementFound = false;
-        for (Transaction p : payments) {
-            if (p.getAmount().equals(BigDecimal.valueOf(amount)) && p.getDebtor().equals(cid) && p.getCreditor().equals(mid)) {
+        for (Payment p : payments) {
+            if (p.getAmount() == amount && p.getCid().equals(cid) && p.getMid().equals(mid)) {
                 elementFound = true;
                 break;
             }
         }
-
         assertTrue(elementFound);
     }
 
@@ -88,7 +75,7 @@ public class PaymentSteps {
     @Given("a customer with a bank account with balance {int}")
     public void aCustomerWithABankAccountWithBalance(int balance) throws BankServiceException_Exception {
         customer = new User();
-        customer.setCprNumber("1234567890");
+        customer.setCprNumber("1122330000");
         cid = customer.getCprNumber();
         customer.setFirstName("Alice");
         customer.setLastName("Aname");
@@ -109,7 +96,7 @@ public class PaymentSteps {
     @Given("a merchant with a bank account with balance {int}")
     public void aMerchantWithABankAccountWithBalance(int balance) throws BankServiceException_Exception {
         merchant = new User();
-        merchant.setCprNumber("9876543210");
+        merchant.setCprNumber("3322119999");
         mid = merchant.getCprNumber();
         merchant.setFirstName("Bob");
         merchant.setLastName("Bname");
@@ -141,11 +128,20 @@ public class PaymentSteps {
         }
     }
 
+    @Then("the payment is unsuccessful")
+    public void thePaymentIsUnsuccessful() {
+
+        assertFalse(responseMessage.isSuccessful());
+    }
+
     @After
     public void after() throws BankServiceException_Exception {
+        //Retire used accounts in bank
         for (String account: usedAccounts) {
-            System.out.println(account);
             bank.retireAccount(account);
         }
+
+        dtuPay.retireCustomer(customer.getCprNumber());
+        dtuPay.retireCustomer(merchant.getCprNumber());
     }
 }

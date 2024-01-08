@@ -10,7 +10,7 @@ import java.util.List;
 
 @Path("/customers")
 public class CustomerResource {
-    CustomerService service = new CustomerService();
+    static CustomerService service = new CustomerService();
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -29,14 +29,14 @@ public class CustomerResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<BankCustomer> getCustomers() {
+    public List<String> getCustomers() {
         return service.getCustomers();
     }
 
-    @GET
-    @Path("/{customerId}") //Maps customerId to the :accountNumber path parameter
-    @Produces(MediaType.APPLICATION_JSON)
-    public BankCustomer getCustomer(@PathParam("customerId") String customerId) {
-        return service.getCustomer(customerId);
+    @DELETE
+    @Path("/{customerId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void retireCustomer(@PathParam("customerId") String customerId) {
+        service.removeCustomer(customerId);
     }
 }

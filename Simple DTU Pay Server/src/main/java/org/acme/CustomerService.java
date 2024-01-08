@@ -11,14 +11,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CustomerService {
-    List<BankCustomer> customers = new ArrayList<>();
     BankService bank = new BankServiceService().getBankServicePort();
     public CustomerService() {}
 
     public ResponseMessage registerCustomer(BankCustomer customer) {
+        Db db = Db.Db();
         //If customer already exists
-        for (BankCustomer c: customers) {
-            if (c.getId().equals(customer.getId())) {
+        for (String c: db.customerIds) {
+            if (c.equals(customer.getId())) {
                 return new ResponseMessage(false, "Customer already exists.");
             }
         }
@@ -27,7 +27,7 @@ public class CustomerService {
             return new ResponseMessage(false, "Customer is not registered with bank.");
         }
 
-        customers.add(customer);
+        db.customerIds.add(customer.getId());
         return new ResponseMessage(true, "Success.");
     }
 
@@ -41,16 +41,23 @@ public class CustomerService {
         return false;
     }
 
-    public List<BankCustomer> getCustomers() {
-        return customers;
+    public List<String> getCustomers() {
+        Db db = Db.Db();
+        return db.customerIds;
     }
 
-    public BankCustomer getCustomer(String customerId) {
-        for (BankCustomer c: customers) {
-            if (c.getId().equals(customerId)) {
+    public String getCustomer(String customerId) {
+        Db db = Db.Db();
+        for (String c: db.customerIds) {
+            if (c.equals(customerId)) {
                 return c;
             }
         }
         return null;
+    }
+
+    public void removeCustomer(String customerId) {
+        Db db = Db.Db();
+        db.customerIds.remove(customerId);
     }
 }

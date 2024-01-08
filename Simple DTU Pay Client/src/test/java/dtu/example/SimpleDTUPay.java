@@ -30,11 +30,11 @@ public class SimpleDTUPay {
         baseUrl = client.target("http://localhost:8080/");
     }
 
-    public List<Transaction> getPayments(String accNumber) {
-        return (List<Transaction>) baseUrl.path("payments")
+    public ArrayList<Payment> getPayments() {
+        return baseUrl.path("payments")
                 .request()
                 .accept(MediaType.APPLICATION_JSON)
-                .get(Response.class);
+                .get(new GenericType<>(){});
     }
 
     public ResponseMessage pay(int amount, String cid, String mid) {
@@ -52,5 +52,11 @@ public class SimpleDTUPay {
                 .post(Entity.entity(message, MediaType.APPLICATION_JSON));
 
         return response.readEntity(ResponseMessage.class);
+    }
+
+    public void retireCustomer(String customerId) {
+        baseUrl.path("customers/").path(customerId)
+                .request()
+                .delete();
     }
 }
