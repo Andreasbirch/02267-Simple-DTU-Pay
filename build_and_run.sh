@@ -1,2 +1,2 @@
 cd Simple\ DTU\ Pay\ Server/
-./mvnw test
+sudo ./mvnw test
