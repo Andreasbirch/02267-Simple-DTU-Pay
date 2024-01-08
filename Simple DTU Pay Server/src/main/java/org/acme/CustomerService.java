@@ -7,7 +7,6 @@ import dtu.ws.fastmoney.User;
 import models.BankCustomer;
 import models.ResponseMessage;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class CustomerService {

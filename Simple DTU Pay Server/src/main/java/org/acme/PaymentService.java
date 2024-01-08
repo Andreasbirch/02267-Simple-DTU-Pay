@@ -11,7 +11,6 @@ import java.util.*;
 public class PaymentService {
     // Lists used as "database"
     BankService bankService = new BankServiceService().getBankServicePort();
-    CustomerService customerService = new CustomerService();
     List<Payment> payments = new ArrayList<>();
 
     public PaymentService() {}
